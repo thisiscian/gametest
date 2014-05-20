@@ -1,0 +1,10 @@
+Game Project
+============
+
+Boost
+-----
+Currently using boost program options, might switch to my own thing later (less dependencies)
+
+freeGlut
+--------
+I hear this is the easiest way to deal with openGL
