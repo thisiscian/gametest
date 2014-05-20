@@ -17,12 +17,14 @@ class Settings {
 Settings get_settings(int ac, char* av[]) {	
 	Settings set;
 	namespace po=boost::program_options;
+	int width,height;
+	string geometry;
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help,h", "produce help message")
-		("width,w", "set width of display");
-		("height,h", "set height of display");
-		("floor,f", "floor it");
+		("width,w", po::value<int>(&width)->default_value(800), "set width of display, default: 800")
+		("height,h", po::value<int>(&height)->default_value(600), "set height of display, default: 600")
+		("geometry,g", po::value<string>(&geometry), "set width and height simultaneously, example: 800x600");
 	po::variables_map vm;
 	po::store(po::parse_command_line(ac,av,desc),vm);
 	po::notify(vm);
@@ -37,10 +39,17 @@ Settings get_settings(int ac, char* av[]) {
 		set.floor=true;	
 	}
 	if(vm.count("width")) {
-		set.width=vm["width"].as<int>();	
+		set.width=width;	
 	}
 	if(vm.count("height")) {
-		set.height=vm["width"].as<int>();	
+		set.height=height;	
+	}
+	if(vm.count("geometry")) {
+		int pos=geometry.find("x");
+		width=atoi(geometry.substr(0,pos).c_str());
+		height=atoi(geometry.substr(pos+1).c_str());
+		set.width=width;
+		set.height=height;
 	}
 	return set;
 }
@@ -91,15 +100,50 @@ void renderScene() {
 	glutSwapBuffers();
 }
 */
+
+
+void drawTriangle() {
+	static const GLfloat g_vertex_buffer_data[] = {
+		 -1.0f, -1.0f, 0.0f,
+		 1.0f, -1.0f, 0.0f,
+		 0.0f,  1.0f, 0.0f,
+	};
+	GLuint vertexbuffer;
+	glGenBuffers(1, &vertexbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+	glVertexAttribPointer(
+		 0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+		 3,                  // size
+		 GL_FLOAT,           // type
+		 GL_FALSE,           // normalized?
+		 0,                  // stride
+		 (void*)0            // array buffer offset
+	);
+	glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+	glDisableVertexAttribArray(0);
+}
+
 int main(int argc, char* argv[]) {
 	Settings settings=get_settings(argc,argv);
 	if(settings.exit != 0) { return settings.exit; }
-
 	GLFWwindow* window=initialiseWindow(settings.width, settings.height);
 
-	double input=atof(argv[1]), output=std::sqrt(input);
+	GLuint VertexArrayID;
+	glGenVertexArrays(1, &VertexArrayID);
+	glBindVertexArray(VertexArrayID);
 
-	if(settings.floor) { output=floor(output); }
-	cout << "sqrt: " << output << endl;
+	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+	GLuint programID = LoadShaders("SimpleVertexShader.vertexshader", "SimpleFragmentShader.fragmentshader");
+	do{
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glUseProgram(programID);
+		drawTriangle();
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	} while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(window) == 0 );
+
 	return 0;
 }

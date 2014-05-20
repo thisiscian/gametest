@@ -26,4 +26,4 @@ configure_file (
 include_directories("${PROJECT_BINARY_DIR}")
  
 # add the executable
-add_executable(Game src/game.cpp)
+add_executable(Game shaders/loadShader.cpp src/game.cpp)
