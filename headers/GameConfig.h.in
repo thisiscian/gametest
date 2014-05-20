@@ -1,8 +1,10 @@
 #include<iostream>
 #include<cmath>
 #include<cstdlib>
+#include<GL/gl.h>
+#include<GL/freeglut.h>
 #include<boost/program_options.hpp>
 
 #define Game_VERSION_MAJOR @Game_VERSION_MAJOR@
 #define Game_VERSION_MINOR @Game_VERSION_MINOR@
-
+#define Game_TITLE @Game_TITLE@
