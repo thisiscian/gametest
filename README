@@ -5,6 +5,8 @@ Boost
 -----
 Currently using boost program options, might switch to my own thing later (less dependencies)
 
-freeGlut
---------
-I hear this is the easiest way to deal with openGL
+GLFW
+----
+I've had a lot of luck with this
+nice tutorial at: http://www.opengl-tutorial.org/beginners-tutorials/tutorial-1-opening-a-window/
+but has old tokens, fixes of which exist at http://www.glfw.org/docs/3.0/moving.html#moving_renamed_tokens

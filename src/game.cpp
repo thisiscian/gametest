@@ -1,5 +1,6 @@
 #include "GameConfig.h"
 using namespace std;
+using namespace glm;
 
 class Settings {
 	public:
@@ -44,13 +45,17 @@ Settings get_settings(int ac, char* av[]) {
 	return set;
 }
 
-int initialiseWindow(int* argc, char* argv[], int w, int h) {
-	glutInit(argc,argv);
-	glutInitWindowPosition(-1,-1); // allow wm to decide where window opens
-	glutInitWindowSize(w,h);
-	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);
-	glutCreateWindow(Game_TITLE);
-	return 0;
+GLFWwindow* initialiseWindow(int w, int h) {
+	glfwInit();
+	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL
+	GLFWwindow* window= glfwCreateWindow(w,h,Game_TITLE, NULL, NULL);
+	glfwMakeContextCurrent(window);
+	glewExperimental=true;
+	glewInit();
+	return window;
 }
 
 float* myPerspective(float fov, float ratio, float nearClip, float farClip) {
@@ -65,6 +70,7 @@ float* myPerspective(float fov, float ratio, float nearClip, float farClip) {
 	return p;
 }
 
+/*
 void changeSize(int w, int h) {
 	float r=h==0?1.0*w:1.0*w/h;
 	float farClip=100;
@@ -75,7 +81,6 @@ void changeSize(int w, int h) {
 	gluPerspective(45,r,nearClip,farClip);
 	glMatrixMode(GL_MODELVIEW);
 }
-
 void renderScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBegin(GL_TRIANGLES);
@@ -85,17 +90,14 @@ void renderScene() {
 	glEnd();
 	glutSwapBuffers();
 }
-
+*/
 int main(int argc, char* argv[]) {
 	Settings settings=get_settings(argc,argv);
 	if(settings.exit != 0) { return settings.exit; }
 
-	initialiseWindow(&argc, argv, settings.width, settings.height);
-	glutDisplayFunc(renderScene);
-	glutReshapeFunc(changeSize);
-	glutMainLoop();
+	GLFWwindow* window=initialiseWindow(settings.width, settings.height);
 
-	double input=atof(argv[1]), output=sqrt(input);
+	double input=atof(argv[1]), output=std::sqrt(input);
 
 	if(settings.floor) { output=floor(output); }
 	cout << "sqrt: " << output << endl;
