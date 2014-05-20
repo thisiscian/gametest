@@ -53,6 +53,29 @@ int initialiseWindow(int* argc, char* argv[], int w, int h) {
 	return 0;
 }
 
+float* myPerspective(float fov, float ratio, float nearClip, float farClip) {
+	float* p = new float[12];
+	for(int i=0; i<12; i++) {
+		p[i]=0;
+	}
+	p[0]=ratio/tan(fov);
+	p[5]=1/tan(fov);
+	p[10]=(nearClip+farClip)/(nearClip-farClip);
+	p[11]=-1;
+	return p;
+}
+
+void changeSize(int w, int h) {
+	float r=h==0?1.0*w:1.0*w/h;
+	float farClip=100;
+	float nearClip=1;
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glViewport(0,0,w,h);
+	gluPerspective(45,r,nearClip,farClip);
+	glMatrixMode(GL_MODELVIEW);
+}
+
 void renderScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBegin(GL_TRIANGLES);
@@ -69,6 +92,7 @@ int main(int argc, char* argv[]) {
 
 	initialiseWindow(&argc, argv, settings.width, settings.height);
 	glutDisplayFunc(renderScene);
+	glutReshapeFunc(changeSize);
 	glutMainLoop();
 
 	double input=atof(argv[1]), output=sqrt(input);

@@ -4,7 +4,7 @@ project (Game)
 set (Game_VERSION_MAJOR 0)
 set (Game_VERSION_MINOR 0)
 set (Game_TITLE "\"GAMETEST\"")
-set (CMAKE_CXX_FLAGS "-lboost_program_options -lglut -lGL")
+set (CMAKE_CXX_FLAGS "-lboost_program_options -lglut -lGL -lGLU")
 
 find_package(OpenGL)
 if(OPENGL_FOUND) 
