@@ -64,6 +64,7 @@ GLFWwindow* initialiseWindow(int w, int h) {
 	glfwMakeContextCurrent(window);
 	glewExperimental=true;
 	glewInit();
+	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 	return window;
 }
 
@@ -134,9 +135,7 @@ int main(int argc, char* argv[]) {
 	GLuint VertexArrayID;
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
-
-	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-	GLuint programID = LoadShaders("SimpleVertexShader.vertexshader", "SimpleFragmentShader.fragmentshader");
+	GLuint programID = LoadShaders("shaders/simplevert.sdr", "shaders/simplefrag.sdr");
 	do{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(programID);

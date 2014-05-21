@@ -1,0 +1,17 @@
+#ifndef GAME_CONFIG_CIAN
+#define GAME_CONFIG_CIAN
+	#include<iostream>
+	#include<cmath>
+	#include<cstdlib>
+	#include<GL/glew.h>
+	#include<GL/gl.h>
+	#include<glm/glm.hpp>
+	#include<GLFW/glfw3.h>
+	#include<boost/program_options.hpp>
+	#include<string>
+	#include"shader.h"
+
+	#define Game_VERSION_MAJOR @Game_VERSION_MAJOR@
+	#define Game_VERSION_MINOR @Game_VERSION_MINOR@
+	#define Game_TITLE @Game_TITLE@
+#endif
