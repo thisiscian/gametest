@@ -65,49 +65,15 @@ GLFWwindow* initialiseWindow(int w, int h) {
 	glewExperimental=true;
 	glewInit();
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+	glClearColor(0.0f,0.0f,0.0f,0.0f);
 	return window;
 }
 
-float* myPerspective(float fov, float ratio, float nearClip, float farClip) {
-	float* p = new float[12];
-	for(int i=0; i<12; i++) {
-		p[i]=0;
-	}
-	p[0]=ratio/tan(fov);
-	p[5]=1/tan(fov);
-	p[10]=(nearClip+farClip)/(nearClip-farClip);
-	p[11]=-1;
-	return p;
-}
-
-/*
-void changeSize(int w, int h) {
-	float r=h==0?1.0*w:1.0*w/h;
-	float farClip=100;
-	float nearClip=1;
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glViewport(0,0,w,h);
-	gluPerspective(45,r,nearClip,farClip);
-	glMatrixMode(GL_MODELVIEW);
-}
-void renderScene() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glBegin(GL_TRIANGLES);
-		glVertex3f(-0.5,0.0,0.0);
-		glVertex3f(0.0,1.0,0.0);
-		glVertex3f(0.5,0.0,0.0);
-	glEnd();
-	glutSwapBuffers();
-}
-*/
-
-
-void drawTriangle() {
-	static const GLfloat g_vertex_buffer_data[] = {
-		 -1.0f, -1.0f, 0.0f,
-		 1.0f, -1.0f, 0.0f,
-		 0.0f,  1.0f, 0.0f,
+void drawTriangle(vec3 a, vec3 b, vec3 c) {
+	GLfloat g_vertex_buffer_data[] = {
+		a[0], a[1], a[2],
+		b[0], b[1], b[2],
+		c[0], c[1], c[2],
 	};
 	GLuint vertexbuffer;
 	glGenBuffers(1, &vertexbuffer);
@@ -132,14 +98,21 @@ int main(int argc, char* argv[]) {
 	if(settings.exit != 0) { return settings.exit; }
 	GLFWwindow* window=initialiseWindow(settings.width, settings.height);
 
+	GLuint programID = LoadShaders("shaders/simplevert.sdr", "shaders/simplefrag.sdr");
 	GLuint VertexArrayID;
+	GLuint MatrixID=glGetUniformLocation(programID, "MVP");
+
+	mat4 Projection = perspective(0.25f*pi<float>(), (float) settings.width/settings.height, 0.1f, 100.0f);
+	mat4 View = lookAt(vec3(0,0,1), vec3(0,0,0), vec3(0,1,0));
+	mat4 Model = mat4(1.0f);
+	mat4 MVP = Projection*View*Model;
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
-	GLuint programID = LoadShaders("shaders/simplevert.sdr", "shaders/simplefrag.sdr");
 	do{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(programID);
-		drawTriangle();
+		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+		drawTriangle(vec3(0,1,0),vec3(-0.5,0,0), vec3(0.5,0,0));
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	} while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(window) == 0 );
