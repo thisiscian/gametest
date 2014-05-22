@@ -2,72 +2,74 @@
 using namespace std;
 using namespace glm;
 
-class Settings {
+template <class TYPE> class duo {
 	public:
-		int exit, width, height, maxWidth, maxHeight;
-		bool floor;
-		Settings() {	
-			exit=0;
-			width=800;
-			height=600;
-		}
+		TYPE x, y;
+		duo() { x=0.0; y=0.0; }
+		duo(TYPE a, TYPE b) { x=a; y=b; }
+		template <class TYPE2>
+		duo<TYPE2> operator-(TYPE2 a) { return duo<TYPE2>(x-a, y-a); }
+		template <class TYPE2>
+		duo<TYPE2> operator/(TYPE2 a) { return duo<TYPE2>(x/a, y/a); }
+		template <class TYPE2>
+		duo<TYPE2> operator/(duo<TYPE2> a) { return duo<TYPE2>(x/a.x, y/a.x); }
+		duo<TYPE> operator-(duo a) { return duo(x-a.x, y-a.y); }
 };
 
-Settings get_settings(int ac, char* av[]) {	
-	Settings set;
-	namespace po=boost::program_options;
-	int width,height;
-	string geometry;
-	po::options_description desc("Allowed options");
-	desc.add_options()
-		("help,h", "produce help message")
-		("width,w", po::value<int>(&width)->default_value(800), "set width of display, default: 800")
-		("height,h", po::value<int>(&height)->default_value(600), "set height of display, default: 600")
-		("geometry,g", po::value<string>(&geometry), "set width and height simultaneously, example: 800x600");
-	po::variables_map vm;
-	po::store(po::parse_command_line(ac,av,desc),vm);
-	po::notify(vm);
-	if(vm.count("help")) {
-		cout << "Game v" << Game_VERSION_MAJOR << "." << Game_VERSION_MINOR << endl;
-		cout << desc << flush;
-		set.exit=1;
-		return set;
-	}
-	
-	if(vm.count("floor")) {
-		set.floor=true;	
-	}
-	if(vm.count("width")) {
-		set.width=width;	
-	}
-	if(vm.count("height")) {
-		set.height=height;	
-	}
-	if(vm.count("geometry")) {
-		int pos=geometry.find("x");
-		width=atoi(geometry.substr(0,pos).c_str());
-		height=atoi(geometry.substr(pos+1).c_str());
-		set.width=width;
-		set.height=height;
-	}
-	return set;
-}
-
-
-GLFWwindow* initialiseWindow(int w, int h) {
-	glfwInit();
-	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL
-	GLFWwindow* window= glfwCreateWindow(w,h,Game_TITLE, NULL, NULL);
-	glfwMakeContextCurrent(window);
-	glewExperimental=true;
-	glewInit();
-	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-	glClearColor(0.0f,0.0f,0.0f,0.0f);
-	return window;
-}
+class Settings {
+	public:
+		int exit;
+		GLFWwindow* window;
+		GLFWmonitor* monitor;
+		duo<int> wSize, wPos, mSize, offset;
+		bool floor;
+		Settings(int ac, char*av[] ) {	
+			exit=0;
+			namespace po=boost::program_options;
+			string geometry;
+			po::options_description desc("Allowed options");
+			desc.add_options()
+				("help,h", "produce help message")
+				("width,w", po::value<int>(&(wSize.x))->default_value(300), "set width of display, default: 800")
+				("height,h", po::value<int>(&(wSize.y))->default_value(300), "set height of display, default: 600")
+				("geometry,g", po::value<string>(&geometry), "set width and height simultaneously, example: 800x600");
+			po::variables_map vm;
+			po::store(po::parse_command_line(ac,av,desc),vm);
+			po::notify(vm);
+			if(vm.count("help")) {
+				cout << "Game v" << Game_VERSION_MAJOR << "." << Game_VERSION_MINOR << endl;
+				cout << desc << flush;
+				exit=1;
+			}
+			if(vm.count("geometry")) {
+				int pos=geometry.find("x");
+				wSize.x=atoi(geometry.substr(0,pos).c_str());
+				wSize.y=atoi(geometry.substr(pos+1).c_str());
+			}
+			glfwInit();
+			glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
+			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
+			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //We don't want the old OpenGL
+			window= glfwCreateWindow(wSize.x,wSize.y,Game_TITLE, NULL, NULL);
+			glfwMakeContextCurrent(window);
+			glewExperimental=true;
+			glewInit();
+			glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+			glClearColor(0.0f,0.0f,0.0f,0.0f);
+			monitor=glfwGetPrimaryMonitor();
+			glfwGetMonitorPos(monitor, (int*) &(offset.x), (int*) &(offset.y));
+			const GLFWvidmode* vid=glfwGetVideoMode(monitor);
+			mSize.x=vid->width;
+			mSize.y=vid->height;
+		}	
+		void update() {
+			glfwGetWindowSize(window, (int*) &(wSize.x), (int*) &(wSize.y));
+			glfwGetWindowPos(window, (int*) &(wPos.x), (int*) &(wPos.y));
+			wPos.x-offset.x;
+			wPos.y-offset.y;
+		}
+} *s;
 
 void square(vec2 a, float w, float h, vec3 col) {
 	GLfloat g_vertex_buffer_data[] = {
@@ -145,59 +147,44 @@ void drawTriangle(vec2 a, vec2 b, vec2 c) {
 	glDisableVertexAttribArray(0);
 }
 
-int main(int argc, char* argv[]) {
-	Settings settings=get_settings(argc,argv);
-	if(settings.exit != 0) { return settings.exit; }
-	GLFWwindow* window=initialiseWindow(settings.width, settings.height);
+float px2a(int px, int size) {
+	return px/(size/2.0f) - 1; 
+}
 
+duo<float> px2a(duo<int> px, duo<int> size) {
+	duo<float> a;
+	a.x= px.x/(size.x/2.0f)-1;
+	a.y= 1-px.y/(size.y/2.0f);
+	return a;
+}
+
+int main(int argc, char* argv[]) {
+	s=new Settings(argc, argv);
+	if(s->exit != 0) { return s->exit; }
 	GLuint programID = LoadShaders("shaders/simplevert.sdr", "shaders/simplefrag.sdr");
 	GLuint VertexArrayID;
-	GLuint MatrixID=glGetUniformLocation(programID, "MVP");
-	GLFWmonitor* monitor=glfwGetPrimaryMonitor();
-	int xOffset, yOffset;
-	glfwGetMonitorPos(monitor, &xOffset, &yOffset);
-	const GLFWvidmode* vid=glfwGetVideoMode(monitor);
-	settings.maxWidth=vid->width;
-	settings.maxHeight=vid->height;
-	vec2 m(vid->width/2, vid->height/2);
-
-	mat4 Projection = perspective(0.25f*pi<float>(), (float) settings.width/settings.height, 0.1f, 100.0f);
-	mat4 View = lookAt(vec3(0,0,1), vec3(0,0,0), vec3(0,1,0));
-	mat4 Model = mat4(1.0f);
-	mat4 MVP = Projection*View*Model;
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
+	cout << "initiating main loop" << endl;
 	do{
-		int x,y;
-		glfwGetWindowSize(window, &(settings.width), &(settings.height));
-		glfwGetWindowPos(window, &x, &y); // top left corner
-		// m -> settings->maxWidth/2, settings->maxHeight/2
-		// relative to top left corner of window, m.x-x, m.y-y
-
-		x-=xOffset; y-=yOffset;
-		Projection = perspective(0.25f*pi<float>(), (float) settings.width/settings.height, 0.1f, 100.0f);
-		//MVP= Projection*View*Model;
-		MVP = Model;
-	
+		s->update();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(programID);
-		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-		//vec2 pos(4.0f*x/settings.maxWidth-1, 4.0f*y/settings.maxHeight-1);
-		float w2=settings.width/2.0f;
-		float h2=settings.width/2.0f;
-		float w=m[0]-w2;
-		float h=m[1]-h2;
 
-		cout << x << "," << y << "\t" << settings.maxWidth << "," << settings.maxHeight << endl;
-	
-		vec2 pos(x/w-1.0f, 1.0f-y/h);
-		vec2 pos1((m[0]-x-w2)/w2,(y+h2-m[1])/h2);
-
-
-		square(pos,0.05, 0.05, vec3(0.1,0.5,0.1));
-		square(pos1,30.0f/settings.width, 30.0f/settings.height,  vec3(0.5,0.1,0.1));
-		glfwSwapBuffers(window);
+		duo<float> posRelW = px2a(s->mSize/2-s->wPos, s->wSize);
+		vec2 pos(posRelW.x, posRelW.y);
+		duo<float> crossHair=px2a(s->wSize/2-20, s->wSize);
+		
+		square(pos,1.0f/s->wSize.x, 2.0f*s->mSize.y/s->wSize.y, vec3(1,1,1));
+		square(pos,2.0f*s->mSize.x/s->wSize.x, 1.0f/s->wSize.y, vec3(1,1,1));
+		square(pos,30.0f/s->wSize.x, 30.0f/s->wSize.y, vec3(0.5,0.1,0.1));
+		square(vec2(0,crossHair.y), 3.0f/s->wSize.x, 30.0f/s->wSize.y, vec3(0,1,0));
+		square(vec2(0,-crossHair.y), 3.0f/s->wSize.x, 30.0f/s->wSize.y, vec3(0,1,0));
+		square(vec2(crossHair.x,0), 30.f/s->wSize.x, 3.f/s->wSize.y, vec3(0,1,0));
+		square(vec2(-crossHair.x,0), 30.f/s->wSize.x, 3.f/s->wSize.y, vec3(0,1,0));
+		glfwSwapBuffers(s->window);
 		glfwPollEvents();
-	} while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(window) == 0 );
+	} while( glfwGetKey(s->window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(s->window) == 0 );
+	cout << "exiting... " << endl;
 	return 0;
 }
