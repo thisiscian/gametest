@@ -69,14 +69,14 @@ GLFWwindow* initialiseWindow(int w, int h) {
 	return window;
 }
 
-void square(vec2 a, float s, vec3 col) {
+void square(vec2 a, float w, float h, vec3 col) {
 	GLfloat g_vertex_buffer_data[] = {
-		a[0]+s/2, a[1]+s/2, 0,
-			a[0]-s/2, a[1]+s/2, 0,
-			a[0]+s/2, a[1]-s/2, 0,
-		a[0]-s/2, a[1]-s/2, 0,
-			a[0]-s/2, a[1]+s/2, 0,
-			a[0]+s/2, a[1]-s/2, 0
+		a[0]+w/2, a[1]+h/2, 0,
+			a[0]-w/2, a[1]+h/2, 0,
+			a[0]+w/2, a[1]-h/2, 0,
+		a[0]-w/2, a[1]-h/2, 0,
+			a[0]-w/2, a[1]+h/2, 0,
+			a[0]+w/2, a[1]-h/2, 0
 	};
 	GLfloat g_color_buffer_data[] = {
 		col[0],col[1],col[2],
@@ -159,8 +159,7 @@ int main(int argc, char* argv[]) {
 	const GLFWvidmode* vid=glfwGetVideoMode(monitor);
 	settings.maxWidth=vid->width;
 	settings.maxHeight=vid->height;
-
-
+	vec2 m(vid->width/2, vid->height/2);
 
 	mat4 Projection = perspective(0.25f*pi<float>(), (float) settings.width/settings.height, 0.1f, 100.0f);
 	mat4 View = lookAt(vec3(0,0,1), vec3(0,0,0), vec3(0,1,0));
@@ -171,9 +170,11 @@ int main(int argc, char* argv[]) {
 	do{
 		int x,y;
 		glfwGetWindowSize(window, &(settings.width), &(settings.height));
-		glfwGetWindowPos(window, &x, &y);
-		x-=xOffset;
-		y-=yOffset;
+		glfwGetWindowPos(window, &x, &y); // top left corner
+		// m -> settings->maxWidth/2, settings->maxHeight/2
+		// relative to top left corner of window, m.x-x, m.y-y
+
+		x-=xOffset; y-=yOffset;
 		Projection = perspective(0.25f*pi<float>(), (float) settings.width/settings.height, 0.1f, 100.0f);
 		//MVP= Projection*View*Model;
 		MVP = Model;
@@ -182,11 +183,19 @@ int main(int argc, char* argv[]) {
 		glUseProgram(programID);
 		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 		//vec2 pos(4.0f*x/settings.maxWidth-1, 4.0f*y/settings.maxHeight-1);
-		vec2 pos(2.0f*x/(settings.maxWidth-settings.width)-1,2.0f*y/(settings.maxHeight-settings.height)-1);
+		float w2=settings.width/2.0f;
+		float h2=settings.width/2.0f;
+		float w=m[0]-w2;
+		float h=m[1]-h2;
+
+		cout << x << "," << y << "\t" << settings.maxWidth << "," << settings.maxHeight << endl;
+	
+		vec2 pos(x/w-1.0f, 1.0f-y/h);
+		vec2 pos1((m[0]-x-w2)/w2,(y+h2-m[1])/h2);
 
 
-		cout << x << "|" << settings.maxWidth << ":" << y << "|" << settings.maxHeight << "\t" << pos[0] << "x" << pos[1] << endl;
-		square(pos,0.05, vec3(0.2,0.5,0.1));
+		square(pos,0.05, 0.05, vec3(0.1,0.5,0.1));
+		square(pos1,30.0f/settings.width, 30.0f/settings.height,  vec3(0.5,0.1,0.1));
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	} while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(window) == 0 );
