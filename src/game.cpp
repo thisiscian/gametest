@@ -71,81 +71,84 @@ class Settings {
 		}
 } *s;
 
-void square(vec2 a, float w, float h, vec3 col) {
-	GLfloat g_vertex_buffer_data[] = {
-		a[0]+w/2, a[1]+h/2, 0,
-			a[0]-w/2, a[1]+h/2, 0,
-			a[0]+w/2, a[1]-h/2, 0,
-		a[0]-w/2, a[1]-h/2, 0,
-			a[0]-w/2, a[1]+h/2, 0,
-			a[0]+w/2, a[1]-h/2, 0
-	};
-	GLfloat g_color_buffer_data[] = {
-		col[0],col[1],col[2],
-			col[0],col[1],col[2],
-			col[0],col[1],col[2],
-		col[0],col[1],col[2],
-			col[0],col[1],col[2],
-			col[0],col[1],col[2]
-	};
-	GLuint vertexbuffer;
-	glGenBuffers(1, &vertexbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+class tri {
+	public:
+	vec2 v[3];
+	tri(vec2 a, vec2 b, vec2 c) {v[0]=a; v[1]=b; v[2]=c;}
+};
 
-  GLuint colorbuffer;
-  glGenBuffers(1, &colorbuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW);
+class Drawer {
+	private:
+		GLuint vertexBuffer, colourBuffer;
+		GLuint programID, vertexArrayID;
+		GLfloat *vertexData, *colourData;
+		int promise, count;
+		GLFWwindow* window;
+	public:
+		Drawer(GLFWwindow* w, int p) {
+			promise=p;
+			window=w;
+			glGenVertexArrays(1, &vertexArrayID);
+			glBindVertexArray(vertexArrayID);
+			programID=LoadShaders("shaders/simplevert.sdr", "shaders/simplefrag.sdr");
 
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-	glVertexAttribPointer(
-		 0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-		 3,                  // size
-		 GL_FLOAT,           // type
-		 GL_FALSE,           // normalized?
-		 0,                  // stride
-		 (void*)0            // array buffer offset
-	);
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
-	glVertexAttribPointer(
-		1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-		3,                                // size
-		GL_FLOAT,                         // type
-		GL_FALSE,                         // normalized?
-		0,                                // stride
-		(void*)0                          // array buffer offset
-	);
+			vertexData=new GLfloat[promise*9];
+			glGenBuffers(1, &vertexBuffer);
+			glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
 
-	glDrawArrays(GL_TRIANGLES, 0, 6); // Starting from vertex 0; 3 vertices total -> 1 triangle
-	glDisableVertexAttribArray(0);
-}
+			colourData=new GLfloat[promise*9];
+			glGenBuffers(1, &colourBuffer);
+			glBindBuffer(GL_ARRAY_BUFFER, colourBuffer);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(colourData), colourData, GL_STATIC_DRAW);
+		}
+		
+		void addTriangle(vec2 a, vec2 b, vec2 c, vec3 col) {
+			if(count >= promise) { return; }
+			vertexData[9*count+0]=a[0]; vertexData[9*count+1]=a[1]; vertexData[9*count+2]=0;
+			vertexData[9*count+3]=b[0]; vertexData[9*count+4]=b[1]; vertexData[9*count+5]=0;
+			vertexData[9*count+6]=c[0]; vertexData[9*count+7]=c[1]; vertexData[9*count+8]=0;
+			for(int i=0; i<3; i++) {
+				for(int j=0; j<3; j++) {
+					colourData[9*count+3*i+j]=col[j];
+					cout << 9*count+3*i+j << ": " << vertexData[9*count+3*i+j] << "," << colourData[9*count+3*i+j] << endl;
+				}
+			}
+			count++;
+		}
+		void addSquare(vec2 C, float w, float h, vec3 col) {
+			vec2 a= vec2(C[0]+w/2, C[1]+h/2);
+			vec2 b= vec2(C[0]+w/2, C[1]-h/2);
+			vec2 c= vec2(C[0]-w/2, C[1]-h/2);
+			vec2 d= vec2(C[0]-w/2, C[1]+h/2);
+			addTriangle(a,d,b,col);
+			addTriangle(a,c,d,col);
+		}
+		void draw() {
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glUseProgram(programID);
 
-void drawTriangle(vec2 a, vec2 b, vec2 c) {
-	GLfloat g_vertex_buffer_data[] = {
-		a[0], a[1], 0,
-		b[0], b[1], 0, 
-		c[0], c[1], 0
-	};
-	GLuint vertexbuffer;
-	glGenBuffers(1, &vertexbuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-	glVertexAttribPointer(
-		 0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-		 3,                  // size
-		 GL_FLOAT,           // type
-		 GL_FALSE,           // normalized?
-		 0,                  // stride
-		 (void*)0            // array buffer offset
-	);
-	glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
-	glDisableVertexAttribArray(0);
-}
+			glEnableVertexAttribArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+			glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0 );
+
+			glEnableVertexAttribArray(1);
+			glBindBuffer(GL_ARRAY_BUFFER, colourBuffer);
+			glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0 );
+	
+			glDrawArrays(GL_TRIANGLES, 0, count*3);
+
+			glDisableVertexAttribArray(0);
+			glDisableVertexAttribArray(1);
+
+			glfwSwapBuffers(window);
+			glfwPollEvents();
+			count=0;
+		}
+		bool escape() {
+			return glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(window) == 0;
+		};
+};
 
 float px2a(int px, int size) {
 	return px/(size/2.0f) - 1; 
@@ -161,30 +164,26 @@ duo<float> px2a(duo<int> px, duo<int> size) {
 int main(int argc, char* argv[]) {
 	s=new Settings(argc, argv);
 	if(s->exit != 0) { return s->exit; }
-	GLuint programID = LoadShaders("shaders/simplevert.sdr", "shaders/simplefrag.sdr");
-	GLuint VertexArrayID;
-	glGenVertexArrays(1, &VertexArrayID);
-	glBindVertexArray(VertexArrayID);
+	Drawer d(s->window, 100);
 	cout << "initiating main loop" << endl;
 	do{
 		s->update();
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glUseProgram(programID);
 
 		duo<float> posRelW = px2a(s->mSize/2-s->wPos, s->wSize);
 		vec2 pos(posRelW.x, posRelW.y);
 		duo<float> crossHair=px2a(s->wSize/2-20, s->wSize);
-		
-		square(pos,1.0f/s->wSize.x, 2.0f*s->mSize.y/s->wSize.y, vec3(1,1,1));
-		square(pos,2.0f*s->mSize.x/s->wSize.x, 1.0f/s->wSize.y, vec3(1,1,1));
-		square(pos,30.0f/s->wSize.x, 30.0f/s->wSize.y, vec3(0.5,0.1,0.1));
-		square(vec2(0,crossHair.y), 3.0f/s->wSize.x, 30.0f/s->wSize.y, vec3(0,1,0));
-		square(vec2(0,-crossHair.y), 3.0f/s->wSize.x, 30.0f/s->wSize.y, vec3(0,1,0));
-		square(vec2(crossHair.x,0), 30.f/s->wSize.x, 3.f/s->wSize.y, vec3(0,1,0));
-		square(vec2(-crossHair.x,0), 30.f/s->wSize.x, 3.f/s->wSize.y, vec3(0,1,0));
-		glfwSwapBuffers(s->window);
-		glfwPollEvents();
-	} while( glfwGetKey(s->window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(s->window) == 0 );
+
+//		d.addSquare(pos,1.0f/s->wSize.x, 2.0f*s->mSize.y/s->wSize.y, vec3(1,1,1));
+//		d.addSquare(pos,2.0f*s->mSize.x/s->wSize.x, 1.0f/s->wSize.y, vec3(1,1,1));
+		d.addSquare(pos,30.0f/s->wSize.x, 30.0f/s->wSize.y, vec3(0.5,0.1,0.1));
+
+//		d.addSquare(vec2(0,crossHair.y), 3.0f/s->wSize.x, 30.0f/s->wSize.y, vec3(0,1,0));
+//		d.addSquare(vec2(0,-crossHair.y), 3.0f/s->wSize.x, 30.0f/s->wSize.y, vec3(0,1,0));
+//		d.addSquare(vec2(crossHair.x,0), 30.f/s->wSize.x, 3.f/s->wSize.y, vec3(0,1,0));
+//		d.addSquare(vec2(-crossHair.x,0), 30.f/s->wSize.x, 3.f/s->wSize.y, vec3(0,1,0));
+
+		d.draw();
+	} while(d.escape());
 	cout << "exiting... " << endl;
 	return 0;
 }
