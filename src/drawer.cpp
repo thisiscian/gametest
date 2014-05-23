@@ -1,9 +1,29 @@
 #include"drawer.h"
 using namespace glm;
 
-Drawer::Drawer(GLFWwindow* w, int p) {
+Drawer::Drawer(int p, int width, int height) {
 	promise=p;
-	window=w;
+	wSize.x=width;
+	wSize.y=height;
+
+	glfwInit();
+	glfwWindowHint(GLFW_SAMPLES, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	window= glfwCreateWindow(wSize.x,wSize.y,Game_TITLE, NULL, NULL);
+	glfwMakeContextCurrent(window);
+	glewExperimental=true;
+	glewInit();
+	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+	glClearColor(0.0f,0.0f,0.0f,0.0f);
+
+	monitor=glfwGetPrimaryMonitor();
+	glfwGetMonitorPos(monitor, (int*) &(offset.x), (int*) &(offset.y));
+	const GLFWvidmode* vid=glfwGetVideoMode(monitor);
+	mSize.x=vid->width;
+	mSize.y=vid->height;
+
 	glGenVertexArrays(1, &vertexArrayID);
 	glBindVertexArray(vertexArrayID);
 	programID=LoadShaders("shaders/simplevert.sdr", "shaders/simplefrag.sdr");
@@ -11,12 +31,12 @@ Drawer::Drawer(GLFWwindow* w, int p) {
 	vertexData=new GLfloat[promise*9];
 	glGenBuffers(1, &vertexBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_DYNAMIC_DRAW);
 
 	colourData=new GLfloat[promise*9];
 	glGenBuffers(1, &colourBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, colourBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(colourData), colourData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(colourData), colourData, GL_DYNAMIC_DRAW);
 }
 
 void Drawer::addTriangle(vec2 a, vec2 b, vec2 c, vec3 col) {
@@ -40,7 +60,12 @@ void Drawer::addSquare(vec2 C, float w, float h, vec3 col) {
 	addTriangle(a,c,d,col);
 }
 void Drawer::draw() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glfwGetWindowSize(window, (int*) &(wSize.x), (int*) &(wSize.y));
+	glfwGetWindowPos(window, (int*) &(wPos.x), (int*) &(wPos.y));
+	wPos.x-offset.x;
+	wPos.y-offset.y;
+
+	glClear(GL_COLOR_BUFFER_BIT);
 	glUseProgram(programID);
 
 	glEnableVertexAttribArray(0);

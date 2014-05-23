@@ -4,17 +4,10 @@
 	#define Game_VERSION_MINOR @Game_VERSION_MINOR@
 	#define Game_TITLE "@Game_TITLE@"
 	#include<boost/program_options.hpp>
-	#include "misc.h"
-	#include "opengl.h"
 	#include <string>
 	class Settings {
 		public:
-			int exit;
-			GLFWwindow* window;
-			GLFWmonitor* monitor;
-			duo<int> wSize, wPos, mSize, offset;
-			bool floor;
+			int exit, width, height;
 			Settings(int ac, char* av[]);
-			void update();
 	};
 #endif
