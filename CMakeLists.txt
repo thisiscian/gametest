@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.8)
 project (GAMETEST)
 # The version number.
 set (Game_VERSION_MAJOR 0)
